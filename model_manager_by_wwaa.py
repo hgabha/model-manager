@@ -123,7 +123,6 @@ HTML_TEMPLATE = '''
         <h1>🤖 Model Manager by WeirdWonderfulAi.Art <svg width="48" height="48"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="48" height="48"/></svg></h1>
         <p>Download and manage AI models for ComfyUI</p>
         <p><small>🙏 Thank you for purchasing my Runpod Toolkit, your support helps the <a href="https://weirdwonderfulai.art">🌏 site</a> and <a href="https://www.youtube.com/@weirdwonderfulaiart">📺 YouTube channel</a> going!!</small></p>
-        <p><small>Version 1.0</small></p>
     </div>
 
     <div class="main-container">
@@ -207,7 +206,7 @@ HTML_TEMPLATE = '''
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-left">
-                <span class="version-info">ComfyUI Model Manager v1.0</span>
+                <span class="version-info">Model Manager v1.0 - by <a href="https://weirdwonderfulai.art">WeirdWondefulAi.Art</a></span>
             </div>
             <div class="footer-right">
                 <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🆘 Support</a>
