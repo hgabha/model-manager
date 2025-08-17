@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
 Model Manager by WeirdWonderfulAI.Art
-A standalone web interface that loads model configurations from external JSON
-and uses the download/delete functions from model-download.py
+A standalone web interface that loads model configurations from external file so you have the latest all the time
 """
 
 import requests
