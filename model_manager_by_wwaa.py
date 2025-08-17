@@ -114,13 +114,14 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ComfyUI Model Manager</title>
+    <link rel="shortcut icon" href="https://weirdwonderfulai.art/favicon.ico" />
+    <title>🤖 Model Manager by WeirdWonderfulAi.Art</title>
     <link rel="stylesheet" href="/static/styles.css">
     <script src="/static/script.js"></script>
 </head>
 <body>
     <div class="header" id="mainHeader">
-        <h1>🤖 Model Manager by WeirdWonderfulAi.Art</h1>
+        <h1>🤖 Model Manager by <svg width="90" height="90"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="90" height="90"/></svg> WeirdWonderfulAi.Art</h1>
         <p>Download and manage AI models for ComfyUI</p>
         <p><small>🙏 Thank you for purchasing my Runpod Toolkit, your support helps the <a href="https://weirdwonderfulai.art">🌏 site</a> and <a href="https://www.youtube.com/@weirdwonderfulaiart">📺 YouTube channel</a> going!!</small></p>
         <p><small>Version 1.0</small></p>
@@ -210,9 +211,9 @@ HTML_TEMPLATE = '''
                 <span class="version-info">ComfyUI Model Manager v1.0</span>
             </div>
             <div class="footer-right">
-                <a href="#" class="footer-link">🆘 Support</a>
-                <a href="#" class="footer-link">📚 Documentation</a>
-                <a href="#" class="footer-link">🐛 Report Issue</a>
+                <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🆘 Support</a>
+                <a href="https://weirdwonderfulai.art/model-manager-for-comfyui/" class="footer-link">📚 Documentation</a>
+                <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🐛 Report Issue</a>
             </div>
         </div>
     </footer>
