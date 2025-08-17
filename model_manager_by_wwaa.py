@@ -120,7 +120,7 @@ HTML_TEMPLATE = '''
 </head>
 <body>
     <div class="header" id="mainHeader">
-        <h1>🤖 Model Manager by <svg width="90" height="90"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="90" height="90"/></svg> WeirdWonderfulAi.Art</h1>
+        <h1>🤖 Model Manager by WeirdWonderfulAi.Art <svg width="48" height="48"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="48" height="48"/></svg></h1>
         <p>Download and manage AI models for ComfyUI</p>
         <p><small>🙏 Thank you for purchasing my Runpod Toolkit, your support helps the <a href="https://weirdwonderfulai.art">🌏 site</a> and <a href="https://www.youtube.com/@weirdwonderfulaiart">📺 YouTube channel</a> going!!</small></p>
         <p><small>Version 1.0</small></p>
