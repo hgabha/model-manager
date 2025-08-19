@@ -197,6 +197,7 @@ function pollProgress() {
             if (data.status === 'idle') {
                 // Operation completed - show final status
                 hideProgress();
+                enableOperationButtons(); // Enable Action buttons
                 
                 // Show final status based on the current_progress message
                 if (data.current_progress) {
@@ -370,6 +371,7 @@ function downloadModels() {
 
     showStatus('Starting download...', 'info');
     showProgress();
+    disableOperationButtons(); // Disable Action buttons
     
     pollInterval = setInterval(pollProgress, 1000);
 
@@ -391,11 +393,13 @@ function downloadModels() {
         } else {
             showStatus(`Download failed: ${data.message}`, 'error');
             hideProgress();
+            enableOperationButtons(); // Enable Action buttons
         }
     })
     .catch(error => {
         showStatus(`Error: ${error.message}`, 'error');
         hideProgress();
+        enableOperationButtons(); // Enable Action buttons
     });
 }
 
@@ -426,6 +430,7 @@ function deleteModels() {
 
     showStatus('Starting deletion...', 'info');
     showProgress();
+    disableOperationButtons(); // Disable Action buttons
     
     pollInterval = setInterval(pollProgress, 1000);
 
@@ -795,3 +800,56 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
+function disableOperationButtons() {
+    const downloadBtn = document.querySelector('button[onclick="downloadModels()"]');
+    const deleteBtn = document.querySelector('button[onclick="deleteModels()"]');
+    const infoBtn = document.querySelector('button[onclick="showModelInfo()"]');
+    const statusBtn = document.querySelector('button[onclick="checkModelStatus()"]');
+    
+    if (downloadBtn) {
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '📥 Download in Progress...';
+    }
+    
+    if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = '🗑️ Operation in Progress...';
+    }
+    
+    if (infoBtn) {
+        infoBtn.disabled = true;
+        infoBtn.textContent = '📋 Please Wait...';
+    }
+    
+    if (statusBtn) {
+        statusBtn.disabled = true;
+        statusBtn.textContent = '🔍 Please Wait...';
+    }
+}
+
+function enableOperationButtons() {
+    const downloadBtn = document.querySelector('button[onclick="downloadModels()"]');
+    const deleteBtn = document.querySelector('button[onclick="deleteModels()"]');
+    const infoBtn = document.querySelector('button[onclick="showModelInfo()"]');
+    const statusBtn = document.querySelector('button[onclick="checkModelStatus()"]');
+    
+    if (downloadBtn) {
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = '📥 Download Models';
+    }
+    
+    if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑️ Delete Models';
+    }
+    
+    if (infoBtn) {
+        infoBtn.disabled = false;
+        infoBtn.textContent = '📋 Show Model Info';
+    }
+    
+    if (statusBtn) {
+        statusBtn.disabled = false;
+        statusBtn.textContent = '🔍 Check Status';
+    }
+}
