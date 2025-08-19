@@ -61,6 +61,7 @@ function hideProgress() {
    if (pollInterval) {
        clearInterval(pollInterval);
    }
+
 }
 
 function updateProgress(current, total, logs = [], currentFile = "", currentProgress = "") {
@@ -232,7 +233,9 @@ function loadModelConfigs() {
                 const select = document.getElementById('modelSelect');
                 select.innerHTML = '<option value="">Choose a model package...</option>';
                 
-                data.models.forEach(model => {
+                // Sort models alphabetically before adding to dropdown
+                const sortedModels = data.models.sort((a, b) => a.localeCompare(b));
+                sortedModels.forEach(model => {
                     const option = document.createElement('option');
                     option.value = model;
                     option.textContent = model;
