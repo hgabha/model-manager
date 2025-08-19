@@ -27,7 +27,14 @@ function clearPreviousMessages() {
 
 function showStatus(message, type = 'info') {
     const status = document.getElementById('status');
-    status.textContent = message;
+    
+    // Check if message contains HTML (like our clickable errors link)
+    if (message.includes('<a href')) {
+        status.innerHTML = message;
+    } else {
+        status.textContent = message;
+    }
+    
     status.className = `status-${type}`;
     status.style.display = 'block';
     
@@ -197,20 +204,26 @@ function pollProgress() {
             if (data.status === 'idle') {
                 // Operation completed - show final status
                 hideProgress();
-                enableOperationButtons(); // Enable Action buttons
+                enableOperationButtons();
                 
                 // Show final status based on the current_progress message
                 if (data.current_progress) {
+                    let statusMessage = data.current_progress;
+                    let statusType = 'success';
+                    
                     if (data.current_progress.includes('error')) {
-                        showStatus(data.current_progress, 'error');
+                        statusType = 'error';
+                        // Make "errors" clickable if there are errors
+                        statusMessage = statusMessage.replace(/(\d+)\s+errors?/g, '<a href="#" onclick="showErrorDetails(); return false;" style="color: #dc3545; text-decoration: underline; font-weight: bold;">$1 errors</a>');
                     } else if (data.current_progress.includes('already existed')) {
-                        showStatus(data.current_progress, 'info');
-                    } else {
-                        showStatus(data.current_progress, 'success');
+                        statusType = 'info';
                     }
+                    
+                    showStatus(statusMessage, statusType);
                 } else {
                     showStatus('Operation completed!', 'success');
                 }
+                
                 // Refresh file explorer to show new files
                 updateFileExplorer();
             }
@@ -854,3 +867,29 @@ function enableOperationButtons() {
     }
 }
 
+function showErrorDetails() {
+    const logContainer = document.getElementById('logContainer');
+    const progressContainer = document.getElementById('progressContainer');
+    
+    if (logContainer && progressContainer) {
+        // Show the progress container and log container
+        progressContainer.style.display = 'block';
+        progressContainer.style.opacity = '1';
+        progressContainer.style.transition = '';
+        
+        logContainer.style.display = 'block';
+        
+        // Scroll to the log container
+        logContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Add a temporary highlight effect to draw attention
+        logContainer.style.border = '2px solid #dc3545';
+        logContainer.style.borderRadius = '4px';
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+            logContainer.style.border = '';
+            logContainer.style.borderRadius = '';
+        }, 3000);
+    }
+}
