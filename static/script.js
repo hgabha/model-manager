@@ -808,7 +808,7 @@ function disableOperationButtons() {
     
     if (downloadBtn) {
         downloadBtn.disabled = true;
-        downloadBtn.textContent = '📥 Download in Progress...';
+        downloadBtn.textContent = '📥 Operation in Progress...';
     }
     
     if (deleteBtn) {
@@ -818,12 +818,12 @@ function disableOperationButtons() {
     
     if (infoBtn) {
         infoBtn.disabled = true;
-        infoBtn.textContent = '📋 Please Wait...';
+        infoBtn.textContent = '📋 Operation in Progress...';
     }
     
     if (statusBtn) {
         statusBtn.disabled = true;
-        statusBtn.textContent = '🔍 Please Wait...';
+        statusBtn.textContent = '🔍 Operation in Progress...';
     }
 }
 
@@ -853,3 +853,4 @@ function enableOperationButtons() {
         statusBtn.textContent = '🔍 Check Status';
     }
 }
+
