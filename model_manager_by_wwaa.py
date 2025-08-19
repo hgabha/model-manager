@@ -206,7 +206,7 @@ HTML_TEMPLATE = '''
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-left">
-                <span class="version-info">Model Manager v1.0 - by <a href="https://weirdwonderfulai.art">WeirdWondefulAi.Art</a></span>
+                <span class="version-info">Model Manager v1.0 by <a href="https://weirdwonderfulai.art" class="footer-link">WeirdWondefulAi.Art</a></span>
             </div>
             <div class="footer-right">
                 <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🆘 Support</a>
