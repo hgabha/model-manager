@@ -569,6 +569,35 @@ def browse_directory():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/delete_file', methods=['POST'])
+def delete_file():
+    try:
+        data = request.json
+        file_path = data.get('file_path', '')
+        
+        if not file_path:
+            return jsonify({'success': False, 'message': 'No file path provided'})
+        
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'message': 'File does not exist'})
+        
+        if not os.path.isfile(file_path):
+            return jsonify({'success': False, 'message': 'Path is not a file'})
+        
+        try:
+            os.remove(file_path)
+            return jsonify({
+                'success': True,
+                'message': f'Successfully deleted: {file_path}'
+            })
+        except PermissionError:
+            return jsonify({'success': False, 'message': 'Permission denied'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error deleting file: {str(e)}'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/progress')
 def get_progress():
     # Get real-time wget progress from log file

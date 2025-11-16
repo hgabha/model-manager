@@ -118,7 +118,6 @@ function updateProgress(current, total, logs = [], currentFile = "", currentProg
     // Update logs - ALWAYS show logs if we have them
     const logContainer = document.getElementById('logContainer');
     if (logs && logs.length > 0) {
-        console.log('Updating logs with:', logs); // Debug log display
         logContainer.innerHTML = '';
         logs.forEach((log, index) => {
             const div = document.createElement('div');
@@ -153,14 +152,11 @@ function updateProgress(current, total, logs = [], currentFile = "", currentProg
             div.className = `log-entry log-${status}`;
             div.textContent = message;
             logContainer.appendChild(div);
-            console.log(`Added log ${index}:`, message, 'with status:', status); // Debug each log
         });
         logContainer.scrollTop = logContainer.scrollHeight;
         
         // Make sure the log container is visible
         logContainer.style.display = 'block';
-    } else {
-        console.log('No logs to display'); // Debug when no logs
     }
 }
 
@@ -191,8 +187,6 @@ function pollProgress() {
     fetch('/progress')
         .then(response => response.json())
         .then(data => {
-            console.log('Progress data:', data); // Debug log
-            
             updateProgress(
                 data.current, 
                 data.total, 
@@ -349,7 +343,6 @@ function updateHFTokenHint() {
     })
     .catch(error => {
         // If there's an error getting model info, still update the HF token hint
-        console.log('Could not load model info:', error);
         hfTokenInput.placeholder = 'hf_... (could not check requirements)';
         hfTokenInput.style.borderColor = '';
         hfTokenInput.style.backgroundColor = '';
@@ -754,28 +747,55 @@ function displayFileTree(structure, container) {
     });
 }
 
-function createFileItem(item) {
+function createFileItem(item, parentPath = '') {
     const div = document.createElement('div');
-    div.className = `file-item ${item.type}`;
+    div.className = `file-item-wrapper ${item.type}`;
+    
+    // Create the main item row (folder name or file name with button)
+    const itemRow = document.createElement('div');
+    itemRow.className = `file-item ${item.type}`;
+    
+    const contentWrapper = document.createElement('span');
+    contentWrapper.className = 'file-item-content';
     
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = item.name;
-    div.appendChild(nameSpan);
+    nameSpan.className = 'file-name';
     
+    // For files, add size in GB format in parentheses
     if (item.size && item.type === 'file') {
-        const sizeSpan = document.createElement('span');
-        sizeSpan.className = 'file-size';
-        sizeSpan.textContent = formatFileSize(item.size);
-        div.appendChild(sizeSpan);
+        const sizeGB = (item.size / (1024 * 1024 * 1024)).toFixed(2);
+        nameSpan.textContent = `${item.name} (${sizeGB} GB)`;
+    } else {
+        nameSpan.textContent = item.name;
     }
     
-    if (item.type === 'folder' && item.children) {
-        div.addEventListener('click', function(e) {
+    contentWrapper.appendChild(nameSpan);
+    itemRow.appendChild(contentWrapper);
+    
+    // Add delete button for files
+    if (item.type === 'file') {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'file-delete-btn';
+        deleteBtn.innerHTML = '✕';
+        deleteBtn.title = 'Delete file';
+        deleteBtn.onclick = function(e) {
             e.stopPropagation();
-            toggleFolder(div, item.children);
+            deleteFileFromExplorer(item.name, parentPath);
+        };
+        itemRow.appendChild(deleteBtn);
+    }
+    
+    div.appendChild(itemRow);
+    
+    // For folders, add click handler and children container
+    if (item.type === 'folder' && item.children) {
+        const currentPath = parentPath ? `${parentPath}/${item.name}` : item.name;
+        itemRow.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleFolder(div, item.children, currentPath);
         });
         
-        // Create children container
+        // Create children container (will appear below the folder row)
         const childrenDiv = document.createElement('div');
         childrenDiv.className = 'file-children';
         div.appendChild(childrenDiv);
@@ -784,24 +804,25 @@ function createFileItem(item) {
     return div;
 }
 
-function toggleFolder(folderElement, children) {
+function toggleFolder(folderElement, children, parentPath) {
     const childrenContainer = folderElement.querySelector('.file-children');
+    const folderRow = folderElement.querySelector('.file-item');
     const isExpanded = childrenContainer.classList.contains('expanded');
     
     if (isExpanded) {
         childrenContainer.classList.remove('expanded');
-        folderElement.classList.remove('expanded');
+        folderRow.classList.remove('expanded');
     } else {
         // Load children if not already loaded
         if (childrenContainer.children.length === 0) {
             children.forEach(child => {
-                const childItem = createFileItem(child);
+                const childItem = createFileItem(child, parentPath);
                 childrenContainer.appendChild(childItem);
             });
         }
         
         childrenContainer.classList.add('expanded');
-        folderElement.classList.add('expanded');
+        folderRow.classList.add('expanded');
     }
 }
 
@@ -811,6 +832,38 @@ function formatFileSize(bytes) {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function deleteFileFromExplorer(filename, relativePath) {
+    const basePath = document.getElementById('basePath').value;
+    const fullPath = relativePath ? `${basePath}/${relativePath}/${filename}` : `${basePath}/${filename}`;
+    
+    if (!confirm(`Are you sure you want to delete "${filename}"?\n\nPath: ${fullPath}\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    fetch('/delete_file', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            file_path: fullPath
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatus(`Successfully deleted: ${filename}`, 'success');
+            // Refresh the file explorer to show updated structure
+            updateFileExplorer();
+        } else {
+            showStatus(`Failed to delete ${filename}: ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        showStatus(`Error deleting file: ${error.message}`, 'error');
+    });
 }
 
 function disableOperationButtons() {

@@ -603,6 +603,11 @@ button:disabled {
     line-height: 1.4;
 }
 
+.file-item-wrapper {
+    display: block;
+    width: 100%;
+}
+
 .file-item {
     padding: 5px 0;
     cursor: pointer;
@@ -610,10 +615,53 @@ button:disabled {
     padding-left: 10px;
     position: relative;
     transition: background-color 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .file-item:hover {
     background-color: rgba(102, 126, 234, 0.1);
+}
+
+.file-item-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.file-name {
+    word-break: break-word;
+}
+
+.file-delete-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    margin-right: 5px;
+    padding: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(255, 107, 107, 0.3);
+    flex-shrink: 0;
+}
+
+.file-delete-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 3px 8px rgba(255, 107, 107, 0.5);
+}
+
+.file-delete-btn:active {
+    transform: scale(0.95);
 }
 
 .file-item.folder {
