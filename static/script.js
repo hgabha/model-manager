@@ -611,7 +611,32 @@ document.addEventListener('DOMContentLoaded', function() {
         loadFolderDropdown();
     }, 500);
     checkComfyUIStatus();
+    autoDetectComfyUIInstalled();
 });
+
+function toggleInstallPanel(forceCollapse) {
+    const body = document.getElementById('installBody');
+    const chevron = document.getElementById('installChevron');
+    const shouldCollapse = forceCollapse !== undefined ? forceCollapse : !body.classList.contains('collapsed');
+    body.classList.toggle('collapsed', shouldCollapse);
+    chevron.className = shouldCollapse ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+}
+
+function autoDetectComfyUIInstalled() {
+    const dir = document.getElementById('comfyuiInstallDir').value.trim() || '/workspace/ComfyUI';
+    fetch('/check_comfyui_installed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ directory: dir })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.installed) {
+            toggleInstallPanel(true); // collapse
+        }
+    })
+    .catch(() => {});
+}
 
 // HF Token Management
 let savedHFToken = '';
@@ -1118,17 +1143,18 @@ function pollInstallProgress() {
                 const btn = document.getElementById('installBtn');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-download"></i> Install ComfyUI';
-                // Mirror install dir into run dir for convenience
-                document.getElementById('comfyuiRunDir').value =
-                    document.getElementById('comfyuiInstallDir').value;
+                if (data.status === 'done') {
+                    updateFileExplorer();
+                    toggleInstallPanel(true); // collapse on success
+                }
             }
         })
         .catch(() => {});
 }
 
 function runComfyUI() {
-    const dir = document.getElementById('comfyuiRunDir').value.trim();
-    const port = document.getElementById('comfyuiPort').value.trim() || '8188';
+    const dir = document.getElementById('comfyuiInstallDir').value.trim() || '/workspace/ComfyUI';
+    const port = '8188';
 
     const logDiv = document.getElementById('comfyuiLog');
     logDiv.style.display = 'block';
@@ -1213,7 +1239,7 @@ function checkComfyUIStatus() {
 
             if (data.running) {
                 badge.className = 'comfyui-status-badge status-running';
-                badge.innerHTML = `<i class="fas fa-circle"></i> Running &mdash; PID: ${data.pid} | Port: ${data.port} | <a href="http://localhost:${data.port}" target="_blank">Open ComfyUI ↗</a>`;
+                badge.innerHTML = `<i class="fas fa-circle"></i> Running &mdash; PID: ${data.pid} | Port: ${data.port}`;
                 document.getElementById('runBtn').disabled = true;
             } else {
                 badge.className = 'comfyui-status-badge status-stopped';
