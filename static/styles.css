@@ -31,16 +31,8 @@ body {
     min-width: 0;
 }
 
-.side-panel-wrapper {
-    min-width: 420px;
-    width: 420px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
 .side-panel {
-    flex: 1;
+    min-width: 480px;
     height: fit-content;
     background: #fff;
     border-radius: 12px;
@@ -48,8 +40,7 @@ body {
     border: 1px solid #ddd;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 420px);
-    min-height: 200px;
+    max-height: calc(100vh - 200px);
 }
 
 .header a {

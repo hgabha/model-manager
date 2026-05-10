@@ -235,72 +235,67 @@ HTML_TEMPLATE = '''
                 <h4>Model Information</h4>
                 <div id="modelInfoContent"></div>
             </div>
-        </div>
-        
-        <!-- Right Side Panel -->
-        <div class="side-panel-wrapper" id="sidePanelWrapper">
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
 
             <!-- ComfyUI Manager -->
-            <div class="card" id="comfyuiManagerPanel">
-                <div class="panel-header" style="cursor:default;">
-                    <h3><i class="fas fa-cubes"></i> ComfyUI Manager</h3>
-                </div>
-                <div class="panel-content" style="overflow-y: auto;">
+            <div id="comfyuiManager">
+                <h3><i class="fas fa-cubes"></i> ComfyUI Manager</h3>
 
-                    <!-- Install (collapsible) -->
-                    <div class="comfyui-subsection" id="installSection">
-                        <div class="comfyui-collapse-header" onclick="toggleInstallPanel()">
-                            <span><i class="fas fa-download"></i> Install ComfyUI</span>
-                            <i class="fas fa-chevron-up" id="installChevron"></i>
-                        </div>
-                        <div id="installBody" class="comfyui-collapse-body">
-                            <div class="form-group" style="margin-top:14px;">
-                                <label for="comfyuiInstallDir">Install Directory:</label>
-                                <input type="text" id="comfyuiInstallDir" value="/workspace/ComfyUI" placeholder="/workspace/ComfyUI">
-                            </div>
-                            <div class="button-group" style="grid-template-columns: 1fr;">
-                                <button type="button" onclick="installComfyUI()" class="btn-primary" id="installBtn">
-                                    <i class="fas fa-download"></i> Install ComfyUI
-                                </button>
-                            </div>
-                            <div id="installProgress" class="comfyui-log" style="display:none;"></div>
-                        </div>
+                <!-- Install (collapsible) -->
+                <div class="comfyui-subsection" id="installSection">
+                    <div class="comfyui-collapse-header" onclick="toggleInstallPanel()">
+                        <span><i class="fas fa-download"></i> Install ComfyUI</span>
+                        <i class="fas fa-chevron-up" id="installChevron"></i>
                     </div>
-
-                    <!-- Run / Stop / Status -->
-                    <div class="comfyui-subsection" style="margin-top: 14px;">
-                        <h4><i class="fas fa-play-circle"></i> Run ComfyUI</h4>
-                        <div class="comfyui-run-buttons">
-                            <button type="button" onclick="runComfyUI()" class="comfyui-btn comfyui-btn-start" id="runBtn">
-                                <i class="fas fa-play"></i> Start
-                            </button>
-                            <button type="button" onclick="stopComfyUI()" class="comfyui-btn comfyui-btn-stop" id="stopBtn">
-                                <i class="fas fa-stop"></i> Stop
-                            </button>
-                            <button type="button" onclick="checkComfyUIStatus()" class="comfyui-btn comfyui-btn-status" id="comfyStatusBtn">
-                                <i class="fas fa-heartbeat"></i> Status
+                    <div id="installBody" class="comfyui-collapse-body">
+                        <div class="form-group" style="margin-top:14px;">
+                            <label for="comfyuiInstallDir">Install Directory:</label>
+                            <input type="text" id="comfyuiInstallDir" value="/workspace/ComfyUI" placeholder="/workspace/ComfyUI">
+                        </div>
+                        <div class="button-group" style="grid-template-columns: 1fr;">
+                            <button type="button" onclick="installComfyUI()" class="btn-primary" id="installBtn">
+                                <i class="fas fa-download"></i> Install ComfyUI
                             </button>
                         </div>
-                        <div id="comfyuiStatusBadge" class="comfyui-status-badge" style="display:none;"></div>
-                        <div id="comfyuiLog" class="comfyui-log" style="display:none; margin-top: 15px;"></div>
+                        <div id="installProgress" class="comfyui-log" style="display:none;"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- File Explorer -->
-            <div class="card side-panel" id="sidePanel">
-                <div class="panel-header">
-                    <h3><i class="fas fa-folder-open"></i> File Explorer</h3>
-                </div>
-                <div class="panel-content">
-                    <div class="current-path" id="currentPath">/workspace/ComfyUI/models</div>
-                    <div class="file-tree" id="fileTree">
-                        <div class="loading">Loading directory structure...</div>
+                <!-- Run / Stop / Status -->
+                <div class="comfyui-subsection" style="margin-top: 14px;">
+                    <h4><i class="fas fa-play-circle"></i> Run ComfyUI</h4>
+                    <div class="comfyui-run-buttons">
+                        <button type="button" onclick="runComfyUI()" class="comfyui-btn comfyui-btn-start" id="runBtn">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button type="button" onclick="stopComfyUI()" class="comfyui-btn comfyui-btn-stop" id="stopBtn">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        <button type="button" onclick="checkComfyUIStatus()" class="comfyui-btn comfyui-btn-status" id="comfyStatusBtn">
+                            <i class="fas fa-heartbeat"></i> Status
+                        </button>
                     </div>
+                    <div id="comfyuiStatusBadge" class="comfyui-status-badge" style="display:none;"></div>
+                    <div id="comfyuiLog" class="comfyui-log" style="display:none; margin-top: 15px;"></div>
                 </div>
             </div>
 
         </div>
+
+        <!-- File Explorer Side Panel -->
+        <div class="card side-panel" id="sidePanel">
+            <div class="panel-header">
+                <h3><i class="fas fa-folder-open"></i> File Explorer</h3>
+            </div>
+            <div class="panel-content">
+                <div class="current-path" id="currentPath">/workspace/ComfyUI/models</div>
+                <div class="file-tree" id="fileTree">
+                    <div class="loading">Loading directory structure...</div>
+                </div>
+            </div>
+        </div>
+
     </div>
     <footer class="footer">
         <div class="footer-content">
