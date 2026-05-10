@@ -3,14 +3,14 @@
 # launch.sh  –  Download, install and run the Model Manager on Linux
 #
 # Usage:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/model-manager/launch.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/hgabha/model-manager/main/model-manager/launch.sh)
 #
 # Or after cloning the repo:
 #   chmod +x launch.sh && ./launch.sh
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO_URL="https://github.com/YOUR_USER/YOUR_REPO.git"
+REPO_URL="https://github.com/hgabha/model-manager.git"
 APP_DIR="$HOME/model-manager"
 PORT=9999
 
