@@ -10,6 +10,8 @@ import threading
 import time
 import tempfile
 import os
+import subprocess
+import collections
 from flask import Flask, render_template_string, request, jsonify
 from pathlib import Path
 import sys
@@ -44,6 +46,16 @@ current_operation = {
     "current_file": "",
     "current_progress": ""
 }
+
+# --- ComfyUI Manager State ---
+comfyui_process = None
+comfyui_port = 8188
+comfyui_install_status = {
+    "status": "idle",   # idle | installing | done | error
+    "log": [],
+    "step": ""
+}
+comfyui_run_log = collections.deque(maxlen=200)
 
 def load_model_configs():
     """Load model configurations from external JSON file"""
@@ -200,6 +212,54 @@ HTML_TEMPLATE = '''
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
+
+            <!-- ComfyUI Manager Section -->
+            <div id="comfyuiManager">
+                <h3><i class="fas fa-cubes"></i> ComfyUI Manager</h3>
+
+                <!-- Install -->
+                <div class="comfyui-subsection">
+                    <h4><i class="fas fa-download"></i> Install ComfyUI</h4>
+                    <div class="form-group">
+                        <label for="comfyuiInstallDir">Install Directory:</label>
+                        <input type="text" id="comfyuiInstallDir" value="/workspace/ComfyUI" placeholder="/workspace/ComfyUI">
+                    </div>
+                    <div class="button-group" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <button type="button" onclick="installComfyUI()" class="btn-primary" id="installBtn">
+                            <i class="fas fa-download"></i> Install ComfyUI
+                        </button>
+                    </div>
+                    <div id="installProgress" class="comfyui-log" style="display:none;"></div>
+                </div>
+
+                <!-- Run / Stop / Status -->
+                <div class="comfyui-subsection" style="margin-top: 20px;">
+                    <h4><i class="fas fa-play-circle"></i> Run ComfyUI</h4>
+                    <div class="form-group">
+                        <label for="comfyuiRunDir">ComfyUI Directory:</label>
+                        <input type="text" id="comfyuiRunDir" value="/workspace/ComfyUI" placeholder="/workspace/ComfyUI">
+                    </div>
+                    <div class="form-group">
+                        <label for="comfyuiPort">Port:</label>
+                        <input type="text" id="comfyuiPort" value="8188" placeholder="8188" style="max-width: 160px;">
+                    </div>
+                    <div class="button-group" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                        <button type="button" onclick="runComfyUI()" class="btn-primary" id="runBtn">
+                            <i class="fas fa-play"></i> Start ComfyUI
+                        </button>
+                        <button type="button" onclick="stopComfyUI()" class="btn-danger" id="stopBtn">
+                            <i class="fas fa-stop"></i> Stop ComfyUI
+                        </button>
+                        <button type="button" onclick="checkComfyUIStatus()" class="btn-success" id="comfyStatusBtn">
+                            <i class="fas fa-heartbeat"></i> Check Status
+                        </button>
+                    </div>
+                    <div id="comfyuiStatusBadge" class="comfyui-status-badge" style="display:none;"></div>
+                    <div id="comfyuiLog" class="comfyui-log" style="display:none; margin-top: 15px;"></div>
+                </div>
             </div>
 
             <div id="status"></div>
@@ -751,6 +811,182 @@ def get_progress():
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE, default_path=DEFAULT_BASE_PATH)
+
+@app.route('/install_comfyui', methods=['POST'])
+def install_comfyui():
+    global comfyui_install_status
+
+    data = request.json
+    install_dir = data.get('install_dir', '/workspace/ComfyUI').strip()
+
+    if not install_dir:
+        return jsonify({'success': False, 'message': 'Install directory is required'})
+
+    if comfyui_install_status['status'] == 'installing':
+        return jsonify({'success': False, 'message': 'Installation already in progress'})
+
+    comfyui_install_status = {'status': 'installing', 'log': ['Starting ComfyUI installation...'], 'step': 'init'}
+
+    def run_install():
+        log = comfyui_install_status['log']
+        try:
+            install_path = Path(install_dir)
+
+            # Step 1: Clone or skip if already present
+            if (install_path / 'main.py').exists():
+                log.append(f'ComfyUI already exists at {install_dir} — skipping clone.')
+            else:
+                log.append(f'Cloning ComfyUI into {install_dir}...')
+                comfyui_install_status['step'] = 'cloning'
+                clone_proc = subprocess.Popen(
+                    ['git', 'clone', 'https://github.com/comfyanonymous/ComfyUI.git', str(install_path)],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                )
+                for line in iter(clone_proc.stdout.readline, ''):
+                    stripped = line.rstrip()
+                    if stripped:
+                        log.append(stripped)
+                clone_proc.wait()
+                if clone_proc.returncode != 0:
+                    log.append(f'ERROR: git clone failed (exit code {clone_proc.returncode})')
+                    comfyui_install_status['status'] = 'error'
+                    return
+                log.append('Clone complete.')
+
+            # Step 2: pip install requirements
+            req_file = install_path / 'requirements.txt'
+            if req_file.exists():
+                log.append('Installing Python requirements...')
+                comfyui_install_status['step'] = 'pip'
+                pip_proc = subprocess.Popen(
+                    ['pip', 'install', '-r', str(req_file)],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                )
+                for line in iter(pip_proc.stdout.readline, ''):
+                    stripped = line.rstrip()
+                    if stripped:
+                        log.append(stripped)
+                pip_proc.wait()
+                if pip_proc.returncode != 0:
+                    log.append(f'ERROR: pip install failed (exit code {pip_proc.returncode})')
+                    comfyui_install_status['status'] = 'error'
+                    return
+                log.append('Requirements installed successfully.')
+            else:
+                log.append('No requirements.txt found — skipping pip install.')
+
+            log.append('✓ ComfyUI installation complete!')
+            comfyui_install_status['status'] = 'done'
+
+        except Exception as e:
+            log.append(f'ERROR: {str(e)}')
+            comfyui_install_status['status'] = 'error'
+
+    thread = threading.Thread(target=run_install)
+    thread.daemon = True
+    thread.start()
+    return jsonify({'success': True, 'message': 'Installation started'})
+
+
+@app.route('/comfyui_install_progress')
+def comfyui_install_progress():
+    return jsonify({
+        'status': comfyui_install_status['status'],
+        'log': list(comfyui_install_status['log']),
+        'step': comfyui_install_status.get('step', '')
+    })
+
+
+@app.route('/run_comfyui', methods=['POST'])
+def run_comfyui():
+    global comfyui_process, comfyui_port, comfyui_run_log
+
+    if comfyui_process and comfyui_process.poll() is None:
+        return jsonify({'success': False, 'message': 'ComfyUI is already running'})
+
+    data = request.json
+    comfyui_dir = data.get('comfyui_dir', '/workspace/ComfyUI').strip()
+    port_str = data.get('port', '8188').strip() or '8188'
+
+    main_py = os.path.join(comfyui_dir, 'main.py')
+    if not os.path.exists(main_py):
+        return jsonify({'success': False, 'message': f'main.py not found in {comfyui_dir}. Is ComfyUI installed?'})
+
+    try:
+        port_int = int(port_str)
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid port number'})
+
+    comfyui_port = port_int
+    comfyui_run_log.clear()
+    comfyui_run_log.append(f'Starting ComfyUI from {comfyui_dir} on port {port_int}...')
+
+    try:
+        comfyui_process = subprocess.Popen(
+            ['python', main_py, '--listen', '0.0.0.0', '--port', str(port_int)],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, cwd=comfyui_dir
+        )
+
+        def capture_output():
+            try:
+                for line in iter(comfyui_process.stdout.readline, ''):
+                    stripped = line.rstrip()
+                    if stripped:
+                        comfyui_run_log.append(stripped)
+            except Exception as e:
+                comfyui_run_log.append(f'[Log capture error: {e}]')
+
+        t = threading.Thread(target=capture_output)
+        t.daemon = True
+        t.start()
+
+        return jsonify({'success': True, 'message': f'ComfyUI started on port {port_int}', 'pid': comfyui_process.pid})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/stop_comfyui', methods=['POST'])
+def stop_comfyui():
+    global comfyui_process
+
+    if not comfyui_process or comfyui_process.poll() is not None:
+        return jsonify({'success': False, 'message': 'ComfyUI is not currently running'})
+
+    try:
+        comfyui_process.terminate()
+        comfyui_process.wait(timeout=10)
+        comfyui_run_log.append('ComfyUI stopped gracefully.')
+        return jsonify({'success': True, 'message': 'ComfyUI stopped successfully'})
+    except subprocess.TimeoutExpired:
+        comfyui_process.kill()
+        comfyui_run_log.append('ComfyUI force-killed after timeout.')
+        return jsonify({'success': True, 'message': 'ComfyUI force-killed'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/comfyui_status')
+def get_comfyui_status():
+    global comfyui_process, comfyui_port
+    running = comfyui_process is not None and comfyui_process.poll() is None
+    return jsonify({
+        'running': running,
+        'pid': comfyui_process.pid if running else None,
+        'port': comfyui_port if running else None
+    })
+
+
+@app.route('/comfyui_log')
+def get_comfyui_log():
+    global comfyui_process, comfyui_run_log
+    running = comfyui_process is not None and comfyui_process.poll() is None
+    return jsonify({
+        'running': running,
+        'log': list(comfyui_run_log)
+    })
+
 
 def main():
     print("=" * 60)

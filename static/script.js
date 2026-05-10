@@ -605,13 +605,12 @@ function checkModelStatus() {
 // Load configurations on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadModelConfigs();
-    updateFileExplorer(); // Load initial file explorer
-    loadSavedHFToken(); // Load saved HF token
-    
-    // Load folder dropdown after a small delay to ensure DOM is ready
+    updateFileExplorer();
+    loadSavedHFToken();
     setTimeout(function() {
-        loadFolderDropdown(); // Load folders for custom download
+        loadFolderDropdown();
     }, 500);
+    checkComfyUIStatus();
 });
 
 // HF Token Management
@@ -1062,4 +1061,165 @@ function downloadCustomModel() {
         showStatus(`Error: ${error.message}`, 'error');
         hideProgress();
     });
+}
+
+// --- ComfyUI Manager ---
+let comfyuiInstallPollInterval = null;
+let comfyuiLogPollInterval = null;
+
+function installComfyUI() {
+    const dir = document.getElementById('comfyuiInstallDir').value.trim();
+    if (!dir) {
+        alert('Please enter an install directory');
+        return;
+    }
+
+    const logDiv = document.getElementById('installProgress');
+    logDiv.style.display = 'block';
+    logDiv.textContent = 'Starting installation...\n';
+
+    const btn = document.getElementById('installBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
+
+    fetch('/install_comfyui', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ install_dir: dir })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            comfyuiInstallPollInterval = setInterval(pollInstallProgress, 1500);
+        } else {
+            logDiv.textContent += `\nError: ${data.message}`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-download"></i> Install ComfyUI';
+        }
+    })
+    .catch(err => {
+        logDiv.textContent += `\nError: ${err.message}`;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-download"></i> Install ComfyUI';
+    });
+}
+
+function pollInstallProgress() {
+    fetch('/comfyui_install_progress')
+        .then(r => r.json())
+        .then(data => {
+            const logDiv = document.getElementById('installProgress');
+            logDiv.textContent = data.log.join('\n');
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            if (data.status === 'done' || data.status === 'error') {
+                clearInterval(comfyuiInstallPollInterval);
+                comfyuiInstallPollInterval = null;
+                const btn = document.getElementById('installBtn');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-download"></i> Install ComfyUI';
+                // Mirror install dir into run dir for convenience
+                document.getElementById('comfyuiRunDir').value =
+                    document.getElementById('comfyuiInstallDir').value;
+            }
+        })
+        .catch(() => {});
+}
+
+function runComfyUI() {
+    const dir = document.getElementById('comfyuiRunDir').value.trim();
+    const port = document.getElementById('comfyuiPort').value.trim() || '8188';
+
+    const logDiv = document.getElementById('comfyuiLog');
+    logDiv.style.display = 'block';
+    logDiv.textContent = 'Starting ComfyUI...\n';
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+
+    fetch('/run_comfyui', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comfyui_dir: dir, port: port })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.innerHTML = '<i class="fas fa-play"></i> Start ComfyUI';
+        if (data.success) {
+            comfyuiLogPollInterval = setInterval(pollComfyUILog, 2000);
+            checkComfyUIStatus();
+        } else {
+            logDiv.textContent += `\nError: ${data.message}`;
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        logDiv.textContent += `\nError: ${err.message}`;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play"></i> Start ComfyUI';
+    });
+}
+
+function stopComfyUI() {
+    if (!confirm('Are you sure you want to stop ComfyUI?')) return;
+
+    fetch('/stop_comfyui', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            const logDiv = document.getElementById('comfyuiLog');
+            logDiv.style.display = 'block';
+            logDiv.textContent += `\n${data.message}`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            if (comfyuiLogPollInterval) {
+                clearInterval(comfyuiLogPollInterval);
+                comfyuiLogPollInterval = null;
+            }
+
+            document.getElementById('runBtn').disabled = false;
+            checkComfyUIStatus();
+        })
+        .catch(err => alert(`Stop failed: ${err.message}`));
+}
+
+function pollComfyUILog() {
+    fetch('/comfyui_log')
+        .then(r => r.json())
+        .then(data => {
+            const logDiv = document.getElementById('comfyuiLog');
+            if (logDiv && data.log && data.log.length > 0) {
+                logDiv.textContent = data.log.join('\n');
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+            if (!data.running) {
+                if (comfyuiLogPollInterval) {
+                    clearInterval(comfyuiLogPollInterval);
+                    comfyuiLogPollInterval = null;
+                }
+                document.getElementById('runBtn').disabled = false;
+                checkComfyUIStatus();
+            }
+        })
+        .catch(() => {});
+}
+
+function checkComfyUIStatus() {
+    fetch('/comfyui_status')
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('comfyuiStatusBadge');
+            badge.style.display = 'inline-block';
+
+            if (data.running) {
+                badge.className = 'comfyui-status-badge status-running';
+                badge.innerHTML = `<i class="fas fa-circle"></i> Running &mdash; PID: ${data.pid} | Port: ${data.port} | <a href="http://localhost:${data.port}" target="_blank">Open ComfyUI ↗</a>`;
+                document.getElementById('runBtn').disabled = true;
+            } else {
+                badge.className = 'comfyui-status-badge status-stopped';
+                badge.innerHTML = '<i class="fas fa-circle"></i> Stopped';
+                document.getElementById('runBtn').disabled = false;
+            }
+        })
+        .catch(() => {});
 }
