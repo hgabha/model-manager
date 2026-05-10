@@ -238,7 +238,7 @@ function loadModelConfigs() {
         .then(data => {
             if (data.success) {
                 configStatus.className = 'config-status config-loaded';
-                configStatus.innerHTML = `✅ Successfully loaded ${data.count} model configurations`;
+                configStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> Successfully loaded ${data.count} model configurations`;
                 
                 const select = document.getElementById('modelSelect');
                 select.innerHTML = '<option value="">Choose a model package...</option>';
@@ -258,13 +258,13 @@ function loadModelConfigs() {
                 configsLoaded = true;
             } else {
                 configStatus.className = 'config-status config-error';
-                configStatus.innerHTML = `❌ Failed to load configurations: ${data.message}`;
+                configStatus.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> Failed to load configurations: ${data.message}`;
                 configsLoaded = false;
             }
         })
         .catch(error => {
             configStatus.className = 'config-status config-error';
-            configStatus.innerHTML = `❌ Network error loading configurations: ${error.message}`;
+            configStatus.innerHTML = `<i class="fas fa-exclamation-circle" style="color: #dc3545;"></i> Network error loading configurations: ${error.message}`;
             configsLoaded = false;
         });
 }
@@ -297,7 +297,7 @@ function updateHFTokenHint() {
         if (data.success) {
             // Update HF token field styling and placeholder
             if (data.requires_hf) {
-                hfTokenInput.placeholder = '⚠️ HF Token REQUIRED for this model';
+                hfTokenInput.placeholder = 'HF Token REQUIRED for this model';
                 hfTokenInput.style.borderColor = '#ffc107';
                 hfTokenInput.style.backgroundColor = '#fff3cd';
             } else {
@@ -314,7 +314,7 @@ function updateHFTokenHint() {
             
             // Highlight HF token requirement
             if (data.requires_hf) {
-                html += `<p><strong>Requires HF Token:</strong> <span style="color: #dc3545; font-weight: bold;">⚠️ YES - Required</span></p>`;
+                html += `<p><strong>Requires HF Token:</strong> <span style="color: #dc3545; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> YES - Required</span></p>`;
             } else {
                 html += `<p><strong>Requires HF Token:</strong> <span style="color: #28a745;">No</span></p>`;
             }
@@ -333,7 +333,7 @@ function updateHFTokenHint() {
             // Add warning message if HF token is required
             if (data.requires_hf) {
                 html += `<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 15px;">`;
-                html += `<strong>⚠️ Important:</strong> This model requires a Hugging Face token. Please ensure you have provided your HF token before downloading.`;
+                html += `<strong><i class="fas fa-exclamation-triangle"></i> Important:</strong> This model requires a Hugging Face token. Please ensure you have provided your HF token before downloading.`;
                 html += `</div>`;
             }
             
@@ -499,7 +499,7 @@ function showModelInfo() {
             
             // Highlight HF token requirement
             if (data.requires_hf) {
-                html += `<p><strong>Requires HF Token:</strong> <span style="color: #dc3545; font-weight: bold;">⚠️ YES - Required</span></p>`;
+                html += `<p><strong>Requires HF Token:</strong> <span style="color: #dc3545; font-weight: bold;"><i class="fas fa-exclamation-triangle"></i> YES - Required</span></p>`;
             } else {
                 html += `<p><strong>Requires HF Token:</strong> <span style="color: #28a745;">No</span></p>`;
             }
@@ -518,7 +518,7 @@ function showModelInfo() {
             // Add warning message if HF token is required
             if (data.requires_hf) {
                 html += `<div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 15px;">`;
-                html += `<strong>⚠️ Important:</strong> This model requires a Hugging Face token. Please ensure you have provided your HF token before downloading.`;
+                html += `<strong><i class="fas fa-exclamation-triangle"></i> Important:</strong> This model requires a Hugging Face token. Please ensure you have provided your HF token before downloading.`;
                 html += `</div>`;
             }
             
@@ -578,7 +578,7 @@ function checkModelStatus() {
             html += '<ul class="file-list">';
             
             data.file_status.forEach(file => {
-                const statusIcon = file.exists ? '✅' : '❌';
+                const statusIcon = file.exists ? '<i class="fas fa-check-circle" style="color: #28a745;"></i>' : '<i class="fas fa-times-circle" style="color: #dc3545;"></i>';
                 const statusText = file.exists ? 'EXISTS' : 'MISSING';
                 html += `<li>${statusIcon} <strong>${file.path}</strong> - ${statusText}</li>`;
             });
@@ -607,6 +607,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadModelConfigs();
     updateFileExplorer(); // Load initial file explorer
     loadSavedHFToken(); // Load saved HF token
+    
+    // Load folder dropdown after a small delay to ensure DOM is ready
+    setTimeout(function() {
+        loadFolderDropdown(); // Load folders for custom download
+    }, 500);
 });
 
 // HF Token Management
@@ -643,7 +648,7 @@ function saveHFToken() {
     tokenInput.classList.add('token-masked');
     
     // Update UI
-    saveBtn.textContent = '✓ Saved';
+    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
     saveBtn.disabled = true;
     toggleBtn.style.display = 'inline-block';
     statusSpan.textContent = 'Token saved and masked for security';
@@ -651,7 +656,7 @@ function saveHFToken() {
     
     // Re-enable save button after a delay
     setTimeout(() => {
-        saveBtn.textContent = '💾 Save';
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
         saveBtn.disabled = false;
     }, 2000);
 }
@@ -664,14 +669,14 @@ function toggleTokenVisibility() {
         // Show real token
         tokenInput.value = savedHFToken;
         tokenInput.classList.remove('token-masked');
-        toggleBtn.textContent = '🙈 Hide';
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
         isTokenMasked = false;
     } else {
         // Mask token
         const maskedToken = 'hf_' + '●'.repeat(savedHFToken.length - 3);
         tokenInput.value = maskedToken;
         tokenInput.classList.add('token-masked');
-        toggleBtn.textContent = '👁️ Show';
+        toggleBtn.innerHTML = '<i class="fas fa-eye"></i> Show';
         isTokenMasked = true;
     }
 }
@@ -731,6 +736,9 @@ function updateFileExplorer() {
             fileTree.innerHTML = `<div class="error">Failed to load directory: ${error.message}</div>`;
         });
     }
+    
+    // Also refresh the folder dropdown for custom downloads
+    loadFolderDropdown();
 }
 
 function displayFileTree(structure, container) {
@@ -776,7 +784,7 @@ function createFileItem(item, parentPath = '') {
     if (item.type === 'file') {
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'file-delete-btn';
-        deleteBtn.innerHTML = '✕';
+        deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
         deleteBtn.title = 'Delete file';
         deleteBtn.onclick = function(e) {
             e.stopPropagation();
@@ -874,22 +882,22 @@ function disableOperationButtons() {
     
     if (downloadBtn) {
         downloadBtn.disabled = true;
-        downloadBtn.textContent = '📥 Operation in Progress...';
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Operation in Progress...';
     }
     
     if (deleteBtn) {
         deleteBtn.disabled = true;
-        deleteBtn.textContent = '🗑️ Operation in Progress...';
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Operation in Progress...';
     }
     
     if (infoBtn) {
         infoBtn.disabled = true;
-        infoBtn.textContent = '📋 Operation in Progress...';
+        infoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Operation in Progress...';
     }
     
     if (statusBtn) {
         statusBtn.disabled = true;
-        statusBtn.textContent = '🔍 Operation in Progress...';
+        statusBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Operation in Progress...';
     }
 }
 
@@ -901,22 +909,22 @@ function enableOperationButtons() {
     
     if (downloadBtn) {
         downloadBtn.disabled = false;
-        downloadBtn.textContent = '📥 Download Models';
+        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Models';
     }
     
     if (deleteBtn) {
         deleteBtn.disabled = false;
-        deleteBtn.textContent = '🗑️ Delete Models';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete Models';
     }
     
     if (infoBtn) {
         infoBtn.disabled = false;
-        infoBtn.textContent = '📋 Show Model Info';
+        infoBtn.innerHTML = '<i class="fas fa-info-circle"></i> Show Model Info';
     }
     
     if (statusBtn) {
         statusBtn.disabled = false;
-        statusBtn.textContent = '🔍 Check Status';
+        statusBtn.innerHTML = '<i class="fas fa-search"></i> Check Status';
     }
 }
 
@@ -945,4 +953,113 @@ function showErrorDetails() {
             logContainer.style.borderRadius = '';
         }, 3000);
     }
+}
+
+// Custom Download Functions
+function loadFolderDropdown() {
+    const basePath = document.getElementById('basePath');
+    const targetFolder = document.getElementById('targetFolder');
+    
+    if (!targetFolder) {
+        console.log('Target folder element not found');
+        return;
+    }
+    
+    if (!basePath) {
+        console.log('Base path element not found');
+        return;
+    }
+    
+    const basePathValue = basePath.value;
+    console.log('Loading folders from:', basePathValue);
+    
+    targetFolder.innerHTML = '<option value="">Loading folders...</option>';
+    
+    fetch('/get_folders', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            base_path: basePathValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Folders response:', data);
+        if (data.success) {
+            targetFolder.innerHTML = '<option value="">Select a folder...</option>';
+            data.folders.forEach(folder => {
+                const option = document.createElement('option');
+                option.value = folder;
+                option.textContent = folder;
+                targetFolder.appendChild(option);
+            });
+            console.log('Loaded', data.folders.length, 'folders');
+        } else {
+            targetFolder.innerHTML = '<option value="">Error loading folders</option>';
+            console.error('Error loading folders:', data.message);
+        }
+    })
+    .catch(error => {
+        targetFolder.innerHTML = '<option value="">Error loading folders</option>';
+        console.error('Error loading folders:', error);
+    });
+}
+
+function downloadCustomModel() {
+    clearPreviousMessages();
+    
+    const customUrl = document.getElementById('customUrl').value.trim();
+    const targetFolder = document.getElementById('targetFolder').value;
+    const customFilename = document.getElementById('customFilename').value.trim();
+    const basePath = document.getElementById('basePath').value;
+    const hfToken = getCurrentHFToken();
+    
+    if (!customUrl) {
+        showStatus('Please enter a URL', 'error');
+        return;
+    }
+    
+    if (!targetFolder) {
+        showStatus('Please select a target folder', 'error');
+        return;
+    }
+    
+    if (!basePath) {
+        showStatus('Please enter a base path', 'error');
+        return;
+    }
+    
+    showStatus('Starting custom download...', 'info');
+    showProgress();
+    
+    pollInterval = setInterval(pollProgress, 1000);
+    
+    fetch('/custom_download', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            url: customUrl,
+            folder: targetFolder,
+            filename: customFilename,
+            base_path: basePath,
+            hf_token: hfToken
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showStatus(data.message, 'info');
+        } else {
+            showStatus(`Download failed: ${data.message}`, 'error');
+            hideProgress();
+        }
+    })
+    .catch(error => {
+        showStatus(`Error: ${error.message}`, 'error');
+        hideProgress();
+    });
 }

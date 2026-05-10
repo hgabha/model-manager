@@ -674,17 +674,27 @@ button:disabled {
 }
 
 .file-item.folder::before {
-    content: "📁 ";
-    margin-right: 5px;
+    font-family: "Font Awesome 6 Free";
+    content: "\f07b";
+    font-weight: 900;
+    margin-right: 8px;
+    color: #3b82f6;
 }
 
 .file-item.file::before {
-    content: "📄 ";
-    margin-right: 5px;
+    font-family: "Font Awesome 6 Free";
+    content: "\f15b";
+    font-weight: 400;
+    margin-right: 8px;
+    color: #6b7280;
 }
 
 .file-item.expanded::before {
-    content: "📂 ";
+    font-family: "Font Awesome 6 Free";
+    content: "\f07c";
+    font-weight: 900;
+    margin-right: 8px;
+    color: #3b82f6;
 }
 
 .file-children {

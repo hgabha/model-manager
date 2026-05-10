@@ -114,15 +114,16 @@ HTML_TEMPLATE = '''
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="https://weirdwonderfulai.art/favicon.ico" />
-    <title>🤖 Model Manager by WeirdWonderfulAi.Art</title>
+    <title>Model Manager by WeirdWonderfulAi.Art</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/static/styles.css">
     <script src="/static/script.js"></script>
 </head>
 <body>
     <div class="header" id="mainHeader">
-        <h1>🤖 Model Manager by WeirdWonderfulAi.Art <svg width="48" height="48"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="48" height="48"/></svg></h1>
+        <h1><i class="fas fa-robot"></i> Model Manager by WeirdWonderfulAi.Art <svg width="48" height="48"><image xlink:href="https://weirdwonderfulai.art/favicon.svg" src="https://weirdwonderfulai.art/favicon-96x96.png" width="48" height="48"/></svg></h1>
         <p>Download and manage AI models for ComfyUI</p>
-        <p><small>🙏 Thank you for purchasing my Runpod Toolkit, your support helps the <a href="https://weirdwonderfulai.art">🌏 site</a> and <a href="https://www.youtube.com/@weirdwonderfulaiart">📺 YouTube channel</a> going!!</small></p>
+        <p><small><i class="fas fa-hands-helping"></i> Thank you for purchasing my Runpod Toolkit, your support helps the <a href="https://weirdwonderfulai.art"><i class="fas fa-globe"></i> site</a> and <a href="https://www.youtube.com/@weirdwonderfulaiart"><i class="fas fa-video"></i> YouTube channel</a> going!!</small></p>
     </div>
 
     <div class="main-container">
@@ -154,19 +155,52 @@ HTML_TEMPLATE = '''
 
                 <div class="button-group">
                     <button type="button" onclick="downloadModels()" class="btn-primary">
-                        📥 Download Models
+                        <i class="fas fa-download"></i> Download Models
                     </button>
                     <button type="button" onclick="deleteModels()" class="btn-danger">
-                        🗑️ Delete Models
+                        <i class="fas fa-trash-alt"></i> Delete Models
                     </button>
                     <button type="button" onclick="showModelInfo()" class="btn-success">
-                        📋 Show Model Info
+                        <i class="fas fa-info-circle"></i> Show Model Info
                     </button>
                     <button type="button" onclick="checkModelStatus()" class="btn-info">
-                        🔍 Check Status
+                        <i class="fas fa-search"></i> Check Status
                     </button>
                 </div>
             </form>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
+            
+            <!-- Custom Download Section -->
+            <div id="customDownload">
+                <h3><i class="fas fa-link"></i> Custom Model Download</h3>
+                <p>Download a model file from a direct URL to a specific folder</p>
+                
+                <form id="customDownloadForm">
+                    <div class="form-group">
+                        <label for="customUrl">Model URL (Hugging Face or direct link):</label>
+                        <input type="text" id="customUrl" name="custom_url" placeholder="https://huggingface.co/..." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="targetFolder">Target Folder:</label>
+                        <select id="targetFolder" name="target_folder" required>
+                            <option value="">Select a folder...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customFilename">Custom Filename (optional):</label>
+                        <input type="text" id="customFilename" name="custom_filename" placeholder="Leave empty to use original filename">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" onclick="downloadCustomModel()" class="btn-primary">
+                            <i class="fas fa-download"></i> Download to Selected Folder
+                        </button>
+                    </div>
+                </form>
+            </div>
 
             <div id="status"></div>
             
@@ -190,10 +224,11 @@ HTML_TEMPLATE = '''
                 <div id="modelInfoContent"></div>
             </div>
         </div>
+        
         <!-- File Explorer Side Panel -->
             <div class="card side-panel" id="sidePanel">
                 <div class="panel-header">
-                    <h3>📁 File Explorer</h3>
+                    <h3><i class="fas fa-folder-open"></i> File Explorer</h3>
                 </div>
                 <div class="panel-content">
                     <div class="current-path" id="currentPath">/workspace/ComfyUI/models</div>
@@ -209,9 +244,9 @@ HTML_TEMPLATE = '''
                 <span class="version-info">Model Manager v1.0 by <a href="https://weirdwonderfulai.art" class="footer-link">WeirdWondefulAi.Art</a></span>
             </div>
             <div class="footer-right">
-                <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🆘 Support</a>
-                <a href="https://weirdwonderfulai.art/model-manager-for-comfyui/" class="footer-link">📚 Documentation</a>
-                <a href="https://discord.gg/22ayqpTnhn" class="footer-link">🐛 Report Issue</a>
+                <a href="https://discord.gg/22ayqpTnhn" class="footer-link"><i class="fas fa-life-ring"></i> Support</a>
+                <a href="https://weirdwonderfulai.art/model-manager-for-comfyui/" class="footer-link"><i class="fas fa-book"></i> Documentation</a>
+                <a href="https://discord.gg/22ayqpTnhn" class="footer-link"><i class="fas fa-bug"></i> Report Issue</a>
             </div>
         </div>
     </footer>
@@ -569,6 +604,105 @@ def browse_directory():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/get_folders', methods=['POST'])
+def get_folders():
+    """Get list of subdirectories from base path for folder dropdown"""
+    try:
+        data = request.json
+        base_path = data.get('base_path', DEFAULT_BASE_PATH)
+        
+        if not os.path.exists(base_path):
+            return jsonify({'success': False, 'message': 'Base path does not exist'})
+        
+        if not os.path.isdir(base_path):
+            return jsonify({'success': False, 'message': 'Base path is not a directory'})
+        
+        folders = []
+        
+        try:
+            # Get all subdirectories
+            for item in os.listdir(base_path):
+                item_path = os.path.join(base_path, item)
+                if os.path.isdir(item_path):
+                    folders.append(item)
+            
+            folders.sort()  # Sort alphabetically
+            
+            return jsonify({
+                'success': True,
+                'folders': folders
+            })
+            
+        except PermissionError:
+            return jsonify({'success': False, 'message': 'Permission denied'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Error reading directory: {str(e)}'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/custom_download', methods=['POST'])
+def handle_custom_download():
+    """Handle custom URL download to specified folder"""
+    try:
+        data = request.json
+        url = data.get('url', '').strip()
+        folder = data.get('folder', '').strip()
+        custom_filename = data.get('filename', '').strip()
+        base_path = data.get('base_path', DEFAULT_BASE_PATH)
+        hf_token = data.get('hf_token', '').strip()
+        
+        if not url:
+            return jsonify({'success': False, 'message': 'URL is required'})
+        
+        if not folder:
+            return jsonify({'success': False, 'message': 'Target folder is required'})
+        
+        # Create file info structure for download_files function
+        file_info = {
+            "url": url,
+            "directory": folder,
+            "filename": custom_filename if custom_filename else ""
+        }
+        
+        # Reset progress tracking
+        current_operation['status'] = 'downloading'
+        current_operation['progress'] = []
+        current_operation['total'] = 1
+        current_operation['current'] = 0
+        current_operation['current_file'] = custom_filename if custom_filename else get_filename_from_url(url)
+        current_operation['current_progress'] = "Starting custom download..."
+        
+        # Run download in a separate thread
+        def run_custom_download():
+            try:
+                result = download_files([file_info], base_path, hf_token)
+                
+                current_operation['current'] = 1
+                current_operation['status'] = 'idle'
+                current_operation['progress'] = result
+                
+                if result and result[0]['status'] == 'success':
+                    current_operation['current_progress'] = "Download completed successfully"
+                elif result and result[0]['status'] == 'skipped':
+                    current_operation['current_progress'] = "File already exists"
+                else:
+                    current_operation['current_progress'] = "Download failed"
+                    
+            except Exception as e:
+                current_operation['status'] = 'error'
+                current_operation['progress'] = [{'status': 'error', 'message': f"Download failed: {str(e)}", 'file': 'unknown'}]
+                current_operation['current_progress'] = f"Download failed: {str(e)}"
+        
+        thread = threading.Thread(target=run_custom_download)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'message': 'Custom download started...'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/delete_file', methods=['POST'])
 def delete_file():
     try:
@@ -626,23 +760,23 @@ def main():
     # Load initial configurations
     print("Loading model configurations...")
     if load_model_configs():
-        print(f"✅ Successfully loaded {len(model_configs)} model configurations")
+        print(f"Successfully loaded {len(model_configs)} model configurations")
     else:
-        print("❌ Failed to load model configurations")
+        print("Failed to load model configurations")
         print("The application will still start, but you'll need to refresh configs manually")
     
-    print(f"🌐 Starting web server on http://localhost:9999")
-    print(f"👆 Use the RunPod **Connect** button to launch")
-    print(f"📋 Available models: {len(model_configs)} packages")
+    print(f"Starting web server on http://localhost:9999")
+    print(f"Use the RunPod **Connect** button to launch")
+    print(f"Available models: {len(model_configs)} packages")
     print("=" * 60)
     print("\nPress Ctrl+C to stop the server")
     
     try:
         app.run(host='0.0.0.0', port=9999, debug=False, threaded=True)
     except KeyboardInterrupt:
-        print("\n\n🛑 Server stopped by user")
+        print("\n\nServer stopped by user")
     except Exception as e:
-        print(f"\n❌ Error starting server: {e}")
+        print(f"\nError starting server: {e}")
 
 if __name__ == '__main__':
     main()
