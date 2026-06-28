@@ -1109,10 +1109,17 @@ function installComfyUI() {
 
     const createVenv = document.getElementById('comfyuiCreateVenv').checked;
 
+    const customNodes = [];
+    document.querySelectorAll('#customNodesList .custom-node-row').forEach(row => {
+        const checked = row.querySelector('.custom-node-check').checked;
+        const url = row.querySelector('.custom-node-url').value.trim();
+        if (checked && url) customNodes.push({ url });
+    });
+
     fetch('/install_comfyui', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ install_dir: dir, create_venv: createVenv })
+        body: JSON.stringify({ install_dir: dir, create_venv: createVenv, custom_nodes: customNodes })
     })
     .then(r => r.json())
     .then(data => {
@@ -1147,11 +1154,27 @@ function pollInstallProgress() {
                 btn.innerHTML = '<i class="fas fa-download"></i> Install ComfyUI';
                 if (data.status === 'done') {
                     updateFileExplorer();
-                    toggleInstallPanel(true); // collapse on success
+                    document.getElementById('installSection').style.display = 'none';
                 }
             }
         })
         .catch(() => {});
+}
+
+function addCustomNode() {
+    const list = document.getElementById('customNodesList');
+    const row = document.createElement('div');
+    row.className = 'custom-node-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    row.innerHTML = '<input type="checkbox" class="custom-node-check" checked style="width:15px;height:15px;flex-shrink:0;cursor:pointer;">' +
+        '<input type="text" class="custom-node-url" placeholder="https://github.com/author/repo" style="flex:1;font-size:0.82em;">' +
+        '<button type="button" onclick="removeCustomNode(this)" style="background:none;border:none;color:#e57373;cursor:pointer;padding:2px 6px;font-size:1em;" title="Remove"><i class="fas fa-times"></i></button>';
+    list.appendChild(row);
+    row.querySelector('.custom-node-url').focus();
+}
+
+function removeCustomNode(btn) {
+    btn.closest('.custom-node-row').remove();
 }
 
 function runComfyUI() {

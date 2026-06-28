@@ -262,6 +262,24 @@ HTML_TEMPLATE = '''
                                 Installs ComfyUI's dependencies into <code>ComfyUI/venv</code> instead of the current environment.
                             </small>
                         </div>
+                        <div class="form-group" style="margin-top:14px;">
+                            <label style="font-weight:600;margin-bottom:8px;display:block;"><i class="fas fa-puzzle-piece"></i> Custom Nodes</label>
+                            <div id="customNodesList" style="display:flex;flex-direction:column;gap:6px;">
+                                <div class="custom-node-row" style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" class="custom-node-check" checked style="width:15px;height:15px;flex-shrink:0;cursor:pointer;">
+                                    <input type="text" class="custom-node-url" value="https://github.com/ltdrdata/ComfyUI-Manager" style="flex:1;font-size:0.82em;">
+                                    <button type="button" onclick="removeCustomNode(this)" style="background:none;border:none;color:#e57373;cursor:pointer;padding:2px 6px;font-size:1em;" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="custom-node-row" style="display:flex;align-items:center;gap:8px;">
+                                    <input type="checkbox" class="custom-node-check" checked style="width:15px;height:15px;flex-shrink:0;cursor:pointer;">
+                                    <input type="text" class="custom-node-url" value="https://github.com/crystian/ComfyUI-Crystools" style="flex:1;font-size:0.82em;">
+                                    <button type="button" onclick="removeCustomNode(this)" style="background:none;border:none;color:#e57373;cursor:pointer;padding:2px 6px;font-size:1em;" title="Remove"><i class="fas fa-times"></i></button>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addCustomNode()" style="margin-top:8px;background:none;border:1px dashed var(--border-color,#555);color:var(--text-secondary,#aaa);padding:5px 12px;border-radius:4px;cursor:pointer;font-size:0.82em;width:100%;">
+                                <i class="fas fa-plus"></i> Add custom node
+                            </button>
+                        </div>
                         <div class="button-group" style="grid-template-columns: 1fr;">
                             <button type="button" onclick="installComfyUI()" class="btn-primary" id="installBtn">
                                 <i class="fas fa-download"></i> Install ComfyUI
@@ -835,6 +853,7 @@ def install_comfyui():
     data = request.json
     install_dir = data.get('install_dir', '/workspace/ComfyUI').strip()
     create_venv = bool(data.get('create_venv', False))
+    custom_nodes = data.get('custom_nodes', [])
 
     if not install_dir:
         return jsonify({'success': False, 'message': 'Install directory is required'})
@@ -920,6 +939,51 @@ def install_comfyui():
                 log.append('Requirements installed successfully.')
             else:
                 log.append('No requirements.txt found — skipping pip install.')
+
+            # Step 4: Clone and install custom nodes
+            if custom_nodes:
+                custom_nodes_path = install_path / 'custom_nodes'
+                custom_nodes_path.mkdir(exist_ok=True)
+                for node in custom_nodes:
+                    url = node.get('url', '').strip().rstrip('/')
+                    if not url:
+                        continue
+                    node_name = url.split('/')[-1].replace('.git', '')
+                    node_path = custom_nodes_path / node_name
+                    if node_path.exists():
+                        log.append(f'[{node_name}] Already exists — skipping clone.')
+                    else:
+                        log.append(f'[{node_name}] Cloning from {url}...')
+                        comfyui_install_status['step'] = f'custom_node:{node_name}'
+                        cn_clone = subprocess.Popen(
+                            ['git', 'clone', url, str(node_path)],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                        )
+                        for line in iter(cn_clone.stdout.readline, ''):
+                            stripped = line.rstrip()
+                            if stripped:
+                                log.append(stripped)
+                        cn_clone.wait()
+                        if cn_clone.returncode != 0:
+                            log.append(f'[{node_name}] ERROR: clone failed — skipping.')
+                            continue
+                        log.append(f'[{node_name}] Cloned.')
+                    node_req = node_path / 'requirements.txt'
+                    if node_req.exists():
+                        log.append(f'[{node_name}] Installing requirements...')
+                        cn_pip = subprocess.Popen(
+                            [pip_exe, 'install', '-r', str(node_req)],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                        )
+                        for line in iter(cn_pip.stdout.readline, ''):
+                            stripped = line.rstrip()
+                            if stripped:
+                                log.append(stripped)
+                        cn_pip.wait()
+                        if cn_pip.returncode != 0:
+                            log.append(f'[{node_name}] ERROR: pip install failed.')
+                        else:
+                            log.append(f'[{node_name}] Requirements installed.')
 
             log.append('✓ ComfyUI installation complete!')
             comfyui_install_status['status'] = 'done'
