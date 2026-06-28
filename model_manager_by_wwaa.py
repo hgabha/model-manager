@@ -967,9 +967,27 @@ def run_comfyui():
     comfyui_run_log.clear()
     comfyui_run_log.append(f'Starting ComfyUI from {comfyui_dir} on port {port_int}...')
 
+    # Build launch command — activate venv if one exists inside the ComfyUI folder
+    if os.name == 'nt':
+        activate_script = os.path.join(comfyui_dir, 'venv', 'Scripts', 'activate.bat')
+        if os.path.exists(activate_script):
+            comfyui_run_log.append('Activating venv...')
+            launch_cmd = f'call "{activate_script}" && python "{main_py}" --listen 0.0.0.0 --port {port_int}'
+            popen_args = {'args': launch_cmd, 'shell': True}
+        else:
+            popen_args = {'args': ['python', main_py, '--listen', '0.0.0.0', '--port', str(port_int)]}
+    else:
+        activate_script = os.path.join(comfyui_dir, 'venv', 'bin', 'activate')
+        if os.path.exists(activate_script):
+            comfyui_run_log.append('Activating venv...')
+            launch_cmd = f'source "{activate_script}" && python "{main_py}" --listen 0.0.0.0 --port {port_int}'
+            popen_args = {'args': launch_cmd, 'shell': True, 'executable': '/bin/bash'}
+        else:
+            popen_args = {'args': ['python', main_py, '--listen', '0.0.0.0', '--port', str(port_int)]}
+
     try:
         comfyui_process = subprocess.Popen(
-            ['python', main_py, '--listen', '0.0.0.0', '--port', str(port_int)],
+            **popen_args,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             universal_newlines=True, cwd=comfyui_dir
         )
