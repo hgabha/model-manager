@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 ComfyUI Model Download Functions
-Functions for downloading and deleting model files using wget
+Functions for downloading and deleting model files using wget (Linux/Mac) or curl (Windows)
 """
 
 import subprocess
+import sys
 from urllib.parse import urlparse
 import os
 import tempfile
@@ -77,10 +78,16 @@ def download_files(urls_array, base_path, hf_token=""):
 
 
         try:
-            cmd = ["wget", "--progress=bar:noscroll"]  # Remove 'force'
-            if hf_token:
-                cmd.extend(["--header", f"Authorization: Bearer {hf_token}"])
-            cmd.extend(["-O", full_path, url])
+            if sys.platform == 'win32':
+                cmd = ["curl", "-L", "--progress-bar", "-o", full_path]
+                if hf_token:
+                    cmd.extend(["-H", f"Authorization: Bearer {hf_token}"])
+                cmd.append(url)
+            else:
+                cmd = ["wget", "--progress=bar:noscroll"]
+                if hf_token:
+                    cmd.extend(["--header", f"Authorization: Bearer {hf_token}"])
+                cmd.extend(["-O", full_path, url])
             
             print(f"Command: {' '.join(cmd)}")
             
