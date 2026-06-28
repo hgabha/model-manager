@@ -1107,10 +1107,12 @@ function installComfyUI() {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Installing...';
 
+    const createVenv = document.getElementById('comfyuiCreateVenv').checked;
+
     fetch('/install_comfyui', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ install_dir: dir })
+        body: JSON.stringify({ install_dir: dir, create_venv: createVenv })
     })
     .then(r => r.json())
     .then(data => {

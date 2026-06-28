@@ -253,6 +253,15 @@ HTML_TEMPLATE = '''
                             <label for="comfyuiInstallDir">Install Directory:</label>
                             <input type="text" id="comfyuiInstallDir" value="/workspace/ComfyUI" placeholder="/workspace/ComfyUI">
                         </div>
+                        <div class="form-group" style="margin-top:10px;">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal;">
+                                <input type="checkbox" id="comfyuiCreateVenv" checked style="width:16px;height:16px;cursor:pointer;">
+                                Create isolated venv inside ComfyUI folder
+                            </label>
+                            <small style="color:var(--text-secondary, #888);margin-top:4px;display:block;">
+                                Installs ComfyUI's dependencies into <code>ComfyUI/venv</code> instead of the current environment.
+                            </small>
+                        </div>
                         <div class="button-group" style="grid-template-columns: 1fr;">
                             <button type="button" onclick="installComfyUI()" class="btn-primary" id="installBtn">
                                 <i class="fas fa-download"></i> Install ComfyUI
@@ -825,6 +834,7 @@ def install_comfyui():
 
     data = request.json
     install_dir = data.get('install_dir', '/workspace/ComfyUI').strip()
+    create_venv = bool(data.get('create_venv', False))
 
     if not install_dir:
         return jsonify({'success': False, 'message': 'Install directory is required'})
@@ -835,6 +845,7 @@ def install_comfyui():
     comfyui_install_status = {'status': 'installing', 'log': ['Starting ComfyUI installation...'], 'step': 'init'}
 
     def run_install():
+        import sys
         log = comfyui_install_status['log']
         try:
             install_path = Path(install_dir)
@@ -860,13 +871,41 @@ def install_comfyui():
                     return
                 log.append('Clone complete.')
 
-            # Step 2: pip install requirements
+            # Step 2: Create venv inside ComfyUI folder (optional)
+            if create_venv:
+                venv_path = install_path / 'venv'
+                if venv_path.exists():
+                    log.append(f'Venv already exists at {venv_path} — reusing.')
+                else:
+                    log.append(f'Creating venv at {venv_path}...')
+                    comfyui_install_status['step'] = 'venv'
+                    venv_proc = subprocess.Popen(
+                        [sys.executable, '-m', 'venv', str(venv_path)],
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+                    )
+                    for line in iter(venv_proc.stdout.readline, ''):
+                        stripped = line.rstrip()
+                        if stripped:
+                            log.append(stripped)
+                    venv_proc.wait()
+                    if venv_proc.returncode != 0:
+                        log.append(f'ERROR: venv creation failed (exit code {venv_proc.returncode})')
+                        comfyui_install_status['status'] = 'error'
+                        return
+                    log.append('Venv created.')
+                # Resolve pip inside the new venv
+                pip_exe = str(venv_path / 'Scripts' / 'pip.exe') if os.name == 'nt' else str(venv_path / 'bin' / 'pip')
+            else:
+                pip_exe = 'pip'
+
+            # Step 3: pip install requirements
             req_file = install_path / 'requirements.txt'
             if req_file.exists():
-                log.append('Installing Python requirements...')
+                dest = f'ComfyUI venv ({install_path / "venv"})' if create_venv else 'current environment'
+                log.append(f'Installing Python requirements into {dest}...')
                 comfyui_install_status['step'] = 'pip'
                 pip_proc = subprocess.Popen(
-                    ['pip', 'install', '-r', str(req_file)],
+                    [pip_exe, 'install', '-r', str(req_file)],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
                 )
                 for line in iter(pip_proc.stdout.readline, ''):
